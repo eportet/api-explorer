@@ -21,10 +21,4 @@
 			"pattern": "[0-9]{3}-[0-9]{3}-[0-9]{4}"
 		}
 	]
-},
-{
-	"title": "Get users",
-	"url": "https://jsonplaceholder.typicode.com/users",
-	"method":"GET",
-	"description": "Get all users from the endpoint"
 }
