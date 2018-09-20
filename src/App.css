@@ -1,3 +1,15 @@
 .download-url-wrapper {
   margin: 1em 0;
 }
+
+.card {
+  margin-bottom: 1em;
+}
+
+.card-input {
+  margin-bottom: 1em;
+}
+
+.card-button {
+  margin-bottom: 1em;
+}

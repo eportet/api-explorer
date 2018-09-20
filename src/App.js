@@ -13,15 +13,13 @@ class ExplorerComponent extends Component {
 		event.preventDefault();
 		const data = new FormData(event.target);
 
-		console.log('Trying my best');
-
 		if (this.props.method.toUpperCase() === 'GET') {
-			fetch(this.props.url).then(response => response.json()).then(json => this.setState({responseBody: JSON.stringify(json)}));
+			fetch(this.props.url).then(response => response.json()).then(json => this.setState({responseBody: JSON.stringify(json, undefined, 4)}));
 		} else {
 			fetch(this.props.url, {
 				method: this.props.method.toUpperCase(),
 				body: data,
-			}).then(response => response.json()).then(json => this.setState({responseBody: JSON.stringify(json)}));
+			}).then(response => response.json()).then(json => this.setState({responseBody: JSON.stringify(json, undefined, 4)}));
 		}
 	}
 
@@ -33,16 +31,9 @@ class ExplorerComponent extends Component {
 		function createForms(body) {
 			const FORMS = body.map((form) =>
 				<div key={form.name}>
-				<Label htmlFor={form.name}>{cleanText(form.name)}{insertRequiredStar(form.required)}</Label>
-        <Input name={form.name}
-            type={form.type}
-            min={form.min}
-            max={form.max}
-            placeholder={form.placeholder}
-            required={form.required}
-            pattern={form.pattern}
-        />
-        </div>
+					<Label htmlFor={form.name}>{cleanText(form.name)}{insertRequiredStar(form.required)}</Label>
+					<Input className="card-input" name={form.name} type={form.type} min={form.min} max={form.max} placeholder={form.placeholder} required={form.required} pattern={form.pattern} />
+				</div>
 			);
 
 			return (FORMS);
@@ -74,14 +65,14 @@ class ExplorerComponent extends Component {
 	render() {
 		return (
 		<div>
-			<Card>
+			<Card className="card">
 				<CardHeader>{this.props.title}</CardHeader>
 				<CardBody>
 					<CardSubtitle>{this.props.method}</CardSubtitle>
 					<Label>URL: <span>{this.props.url}</span></Label>
 					<form onSubmit={this.handleSubmit}>
 						{this.renderForms()}
-						<Button color="success">Send Request</Button>
+						<Button className="card-button" color="success">Send Request</Button>
 					</form>
 					<CardSubtitle>Response</CardSubtitle>
 					<form>
@@ -97,6 +88,7 @@ class ExplorerComponent extends Component {
 class APIExplorer extends Component {
 	constructor() {
 		super();
+		this.handleSubmit = this.handleSubmit.bind(this);
 		this.valueJSON = 'https://raw.githubusercontent.com/eportet/api-explorer/master/public/endpoints.json';
 		this.state = {}
 	}
@@ -107,6 +99,20 @@ class APIExplorer extends Component {
 		.then(endpoints => {
 			this.setState({endpoints});
 		});
+	}
+
+	handleSubmit(event) {
+		event.preventDefault();
+		const data = new FormData(event.target);
+
+		console.log(data);
+
+		fetch(data.jsonSource)
+		.then(res => res.json())
+		.then(endpoints => {
+			this.setState({endpoints});
+		});
+
 	}
 
 	renderEndpoints() {
@@ -133,11 +139,13 @@ class APIExplorer extends Component {
 	render() {
 		return (
 			<div>
+				<form>
 				<InputGroup className="download-url-wrapper">
 					<InputGroupAddon addonType="prepend"><Button color="primary">Smartcar API Explorer:</Button></InputGroupAddon>
-					<Input defaultValue={this.valueJSON} />
+					<Input name="jsonSource" defaultValue={this.valueJSON} />
 					<InputGroupAddon addonType="append"><Button color="secondary">Explore</Button></InputGroupAddon>
 				</InputGroup>
+				</form>
 				{this.renderEndpoints()}
 			</div>
 		);
