@@ -1,21 +1,74 @@
 import React, { Component } from 'react';
-import {Container, Input, Button, InputGroup, InputGroupAddon, FormGroup, Label, Card, CardHeader, CardBody, CardSubtitle} from 'reactstrap';
+import {Container, Input, Button, InputGroup, InputGroupAddon, Label, Card, CardHeader, CardBody, CardSubtitle} from 'reactstrap';
 import './App.css';
 
 class ExplorerComponent extends Component {
 	constructor(props) {
 		super(props);
 		this.handleSubmit = this.handleSubmit.bind(this);
+		this.state = { responseBody: '' }
 	}
 
 	handleSubmit(event) {
 		event.preventDefault();
 		const data = new FormData(event.target);
 
-		fetch('/api/form-submit-url', {
-			method: 'POST',
-			body: data,
-		});
+		console.log('Trying my best');
+
+		if (this.props.method.toUpperCase() === 'GET') {
+			fetch(this.props.url).then(response => response.json()).then(json => this.setState({responseBody: JSON.stringify(json)}));
+		} else {
+			fetch(this.props.url, {
+				method: this.props.method.toUpperCase(),
+				body: data,
+			}).then(response => response.json()).then(json => this.setState({responseBody: JSON.stringify(json)}));
+		}
+	}
+
+	renderForms() {
+		if (this.props.body === undefined) {
+			return null;
+		}
+
+		function createForms(body) {
+			const FORMS = body.map((form) =>
+				<div key={form.name}>
+				<Label htmlFor={form.name}>{cleanText(form.name)}{insertRequiredStar(form.required)}</Label>
+        <Input name={form.name}
+            type={form.type}
+            min={form.min}
+            max={form.max}
+            placeholder={form.placeholder}
+            required={form.required}
+            pattern={form.pattern}
+        />
+        </div>
+			);
+
+			return (FORMS);
+		}
+
+		function insertRequiredStar(isRequired) {
+			if (isRequired) {
+				return (<span>*</span>);
+			}
+		}
+
+		function cleanText(textToClean) {
+			if (textToClean.includes('-')) {
+				let text = textToClean.split('-').join(' ');
+				text = text.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+				return text;
+			} else {
+				return textToClean.toLowerCase().split(' ').map((s) => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+			}
+		}
+
+		return (
+			<div>
+				{createForms(this.props.body)}
+			</div>
+		);
 	}
 
 	render() {
@@ -26,19 +79,14 @@ class ExplorerComponent extends Component {
 				<CardBody>
 					<CardSubtitle>{this.props.method}</CardSubtitle>
 					<Label>URL: <span>{this.props.url}</span></Label>
-					<FormGroup onSubmit={this.handleSubmit}>
-						<Label htmlFor="email">Email</Label>
-						<Input name="email" type="email" />
-						<Label >Full Name</Label>
-						<Input htmlFor="email"/>
-						<Label>Phone</Label>
-						<Input />
-					</FormGroup>
-					<Button color="success">Send Request</Button>
+					<form onSubmit={this.handleSubmit}>
+						{this.renderForms()}
+						<Button color="success">Send Request</Button>
+					</form>
 					<CardSubtitle>Response</CardSubtitle>
-					<FormGroup>
-						<Input type="textarea" readOnly />
-					</FormGroup>
+					<form>
+						<Input value={this.state.responseBody} type="textarea" readOnly />
+					</form>
 				</CardBody>
 			</Card>
 		</div>
@@ -68,7 +116,7 @@ class APIExplorer extends Component {
 
 		function createEndpoints(endpoints) {
 			const ENDPOINTS = endpoints.map((endpoint) =>
-				<ExplorerComponent key={endpoint.title} title={endpoint.title} method={endpoint.method} url={endpoint.url} />
+				<ExplorerComponent key={endpoint.title} title={endpoint.title} method={endpoint.method} url={endpoint.url} body={endpoint.body} />
 			);
 
 			return (ENDPOINTS);

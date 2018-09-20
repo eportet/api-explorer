@@ -28,5 +28,11 @@
 		"url": "https://jsonplaceholder.typicode.com/users",
 		"method":"GET",
 		"description": "Get all users from the endpoint"
+	},
+	{
+		"title": "Get TODO 1",
+		"url": "https://jsonplaceholder.typicode.com/todos/1",
+		"method":"GET",
+		"description": "Get TODO from the endpoint"
 	}
 ]
