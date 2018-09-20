@@ -1,4 +1,4 @@
-.download-url-wrapper {
+.url-source {
   margin: 1em 0;
 }
 
@@ -12,4 +12,29 @@
 
 .card-button {
   margin-bottom: 1em;
+}
+
+.url-link {
+  color: grey;
+  font-size: 1em;
+}
+
+.required-star {
+  color: red;
+}
+
+.response-label {
+  margin-top: .5em;
+}
+
+.post {
+  color: red;
+}
+
+.get {
+  color: green;
+}
+
+.put {
+  color: orange;
 }

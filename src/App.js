@@ -6,20 +6,22 @@ class ExplorerComponent extends Component {
 	constructor(props) {
 		super(props);
 		this.handleSubmit = this.handleSubmit.bind(this);
-		this.state = { responseBody: '' }
+		this.state = {}
 	}
 
 	handleSubmit(event) {
 		event.preventDefault();
-		const data = new FormData(event.target);
-
-		if (this.props.method.toUpperCase() === 'GET') {
-			fetch(this.props.url).then(response => response.json()).then(json => this.setState({responseBody: JSON.stringify(json, undefined, 4)}));
+		if (this.props.method === 'GET') {
+			fetch(this.props.url)
+			.then(response => response.json())
+			.then(json => this.setState({responseBody: JSON.stringify(json, undefined, 4)}))
 		} else {
 			fetch(this.props.url, {
-				method: this.props.method.toUpperCase(),
-				body: data,
-			}).then(response => response.json()).then(json => this.setState({responseBody: JSON.stringify(json, undefined, 4)}));
+				method: this.props.method,
+				body: JSON.stringify(this.getFormValues()),
+				headers: { "Content-type": "application/json; charset=UTF-8"}
+			}).then(response => response.json())
+			.then(json => this.setState({responseBody: JSON.stringify(json, undefined, 4)}));
 		}
 	}
 
@@ -32,7 +34,16 @@ class ExplorerComponent extends Component {
 			const FORMS = body.map((form) =>
 				<div key={form.name}>
 					<Label htmlFor={form.name}>{cleanText(form.name)}{insertRequiredStar(form.required)}</Label>
-					<Input className="card-input" name={form.name} type={form.type} min={form.min} max={form.max} placeholder={form.placeholder} required={form.required} pattern={form.pattern} />
+					<Input
+						className="card-input"
+						name={form.name}
+						type={form.type}
+						min={form.min}
+						max={form.max}
+						placeholder={form.placeholder}
+						required={form.required}
+						pattern={form.pattern}
+					/>
 				</div>
 			);
 
@@ -41,7 +52,7 @@ class ExplorerComponent extends Component {
 
 		function insertRequiredStar(isRequired) {
 			if (isRequired) {
-				return (<span>*</span>);
+				return (<span className="required-star">*</span>);
 			}
 		}
 
@@ -56,10 +67,20 @@ class ExplorerComponent extends Component {
 		}
 
 		return (
-			<div>
+			<div className={this.props.title.split(' ').join('')}>
 				{createForms(this.props.body)}
 			</div>
 		);
+	}
+
+	getFormValues() {
+		let values = {}
+		// Get unique div containing all input fields and add each value to the values object
+		const form = Array.from(document.querySelector('.' + this.props.title.split(' ').join('')).querySelectorAll('input'));
+		form.forEach(input => {
+				values[input.name] = input.value;
+		});
+		return values;
 	}
 
 	render() {
@@ -68,14 +89,14 @@ class ExplorerComponent extends Component {
 			<Card className="card">
 				<CardHeader>{this.props.title}</CardHeader>
 				<CardBody>
-					<CardSubtitle>{this.props.method}</CardSubtitle>
-					<Label>URL: <span>{this.props.url}</span></Label>
+					<CardSubtitle className={this.props.method.toLowerCase()}>{this.props.method}</CardSubtitle>
+					<Label>URL: <span className="url-link">{this.props.url}</span></Label>
 					<form onSubmit={this.handleSubmit}>
 						{this.renderForms()}
 						<Button className="card-button" color="success">Send Request</Button>
 					</form>
 					<CardSubtitle>Response</CardSubtitle>
-					<form>
+					<form className="response-label">
 						<Input value={this.state.responseBody} type="textarea" readOnly />
 					</form>
 				</CardBody>
@@ -89,32 +110,44 @@ class APIExplorer extends Component {
 	constructor() {
 		super();
 		this.handleSubmit = this.handleSubmit.bind(this);
-		this.valueJSON = 'https://raw.githubusercontent.com/eportet/api-explorer/master/public/endpoints.json';
-		this.state = {}
+		this.handleChange = this.handleChange.bind(this);
+		this.state = {
+			url: 'https://raw.githubusercontent.com/eportet/api-explorer/master/public/endpoints.json',
+		}
 	}
 
+	// On page load, update page with the defaultJSON endpoints
 	componentWillMount() {
-		fetch(this.valueJSON)
-		.then(res => res.json())
-		.then(endpoints => {
-			this.setState({endpoints});
+		this.fetchJSON(this.state.url);
+	}
+
+	// Fetch the endpoints of given URL
+	fetchJSON(url) {
+		fetch(url)
+		.then(res => {
+			if (!res.ok) {
+				throw Error(res.statusText);
+			}
+			return res.json();
+		}).then(ep => {
+			this.setState({endpoints: ep});
+		}).catch(error => {
+			console.log(error);
 		});
 	}
 
+	// Updates the endpoints content to match the given URL
 	handleSubmit(event) {
 		event.preventDefault();
-		const data = new FormData(event.target);
-
-		console.log(data);
-
-		fetch(data.jsonSource)
-		.then(res => res.json())
-		.then(endpoints => {
-			this.setState({endpoints});
-		});
-
+		this.fetchJSON(this.state.url);
 	}
 
+	// Keeps state.url updated to the value on the input bar
+	handleChange(event) {
+		this.setState({ [event.target.name]: event.target.value });
+	}
+
+	// Will iteratively render all the endpoints fetched from the url
 	renderEndpoints() {
 		if (this.state.endpoints === undefined) {
 			return null;
@@ -122,7 +155,13 @@ class APIExplorer extends Component {
 
 		function createEndpoints(endpoints) {
 			const ENDPOINTS = endpoints.map((endpoint) =>
-				<ExplorerComponent key={endpoint.title} title={endpoint.title} method={endpoint.method} url={endpoint.url} body={endpoint.body} />
+				<ExplorerComponent
+					key={endpoint.title}
+					title={endpoint.title}
+					method={endpoint.method}
+					url={endpoint.url}
+					body={endpoint.body}
+				/>
 			);
 
 			return (ENDPOINTS);
@@ -135,18 +174,20 @@ class APIExplorer extends Component {
 		);
 	}
 
-
 	render() {
 		return (
 			<div>
-				<form>
-				<InputGroup className="download-url-wrapper">
-					<InputGroupAddon addonType="prepend"><Button color="primary">Smartcar API Explorer:</Button></InputGroupAddon>
-					<Input name="jsonSource" defaultValue={this.valueJSON} />
-					<InputGroupAddon addonType="append"><Button color="secondary">Explore</Button></InputGroupAddon>
-				</InputGroup>
+				<form onSubmit={this.handleSubmit}>
+					<InputGroup className="url-source">
+						<InputGroupAddon addonType="prepend"><Button color="primary">Smartcar API Explorer:</Button></InputGroupAddon>
+						{/* URL Input Source */}
+						<Input name="url" defaultValue={this.state.url} onChange={this.handleChange}/>
+						<InputGroupAddon addonType="append"><Button type="submit" color="secondary">Explore</Button></InputGroupAddon>
+					</InputGroup>
 				</form>
-				{this.renderEndpoints()}
+				<ErrorBoundary>
+					{this.renderEndpoints()}
+				</ErrorBoundary>
 			</div>
 		);
 	}
@@ -159,6 +200,28 @@ class App extends Component {
 				<APIExplorer />
 			</Container>
 		);
+	}
+}
+
+class ErrorBoundary extends Component {
+	constructor(props) {
+		super(props);
+		this.state = { hasError: false };
+	}
+
+	componentDidCatch(e, info) {
+		// Display fallback UI
+		this.setState({ hasError: true, error: e });
+		// You can also log the error to an error reporting service
+		console.log(e, info);
+	}
+
+	render() {
+		if (this.state.hasError) {
+			// You can render any custom fallback UI
+			return <h1>{this.state.error}</h1>;
+		}
+		return this.props.children;
 	}
 }
 
